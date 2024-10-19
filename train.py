@@ -117,9 +117,11 @@ for epoch in range(epochs):
                                                     attention_mask * actions[:, :, 1], reduction='mean') / 2
 
         # Mask for states
+        # Given true state at t=0, predict state t=0, compare with truth state at t=1
+        # Ex: predicted states 0-19, should match true states 1-20
         expanded_mask = attention_mask.unsqueeze(-1).expand_as(state_preds)
-        loss_state = torch.nn.functional.mse_loss(expanded_mask[:, 1:, :] * state_preds[:, :-1, :],
-                                                  expanded_mask[:, 1:, :] * states[:, 1:, :], reduction='mean')
+        loss_state = torch.nn.functional.mse_loss(expanded_mask[:, :-1, :] * state_preds[:, :-1, :],
+                                                  expanded_mask[:, :-1, :] * states[:, 1:, :], reduction='mean')
 
         loss = loss_action1 + loss_action2 + loss_state
 
