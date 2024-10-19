@@ -54,11 +54,7 @@ model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
 @torch.no_grad()
 def evaluate(val_dataloader):
     model.eval()
-
-    epoch_losses_action1 = []
-    epoch_losses_action2 = []
-    epoch_losses_state = []
-    epoch_losses = []
+    epoch_losses_action1, epoch_losses_action2, epoch_losses_state, epoch_losses = [], [], [], []
 
     for batch in (val_dataloader):
         states, actions, rtgs, ctgs, attention_mask, timesteps, ix = batch
@@ -171,10 +167,10 @@ for epoch in range(epochs):
     accelerator.print(
         {
             "epoch": epoch + 1,
-            "loss action1": val_losses_action1[-1],
-            "loss action2": val_losses_action2[-1],
-            "loss state": val_losses_state[-1],
-            "loss total": val_losses[-1],
+            "val loss action1": val_losses_action1[-1],
+            "val loss action2": val_losses_action2[-1],
+            "val loss state": val_losses_state[-1],
+            "val loss total": val_losses[-1],
         })
 
     accelerator.save_state(f'checkpoints/checkpoint_epoch_{epoch + 1}')
