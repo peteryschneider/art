@@ -1,6 +1,7 @@
 import statistics
 import pickle
 import os
+from collections import defaultdict
 
 import torch
 from torch.optim import AdamW
@@ -8,6 +9,7 @@ from accelerate import Accelerator
 
 from art.data import load_data, train_val_split, normalize_data, create_dataloader
 from art.models import create_model
+from art.visualization import plot_loss
 
 # Set these parameters
 data_dir = 'data'
@@ -54,7 +56,7 @@ model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
 @torch.no_grad()
 def evaluate(val_dataloader):
     model.eval()
-    epoch_losses_action1, epoch_losses_action2, epoch_losses_state, epoch_losses = [], [], [], []
+    val_epoch_losses = defaultdict(list)
 
     for batch in (val_dataloader):
         states, actions, rtgs, ctgs, attention_mask, timesteps, ix = batch
@@ -78,22 +80,22 @@ def evaluate(val_dataloader):
 
         loss = loss_action1 + loss_action2 + loss_state
 
-        epoch_losses_action1.append(loss_action1.item())
-        epoch_losses_action2.append(loss_action2.item())
-        epoch_losses_state.append(loss_state.item())
-        epoch_losses.append(loss.item())
+        val_epoch_losses['action1'].append(loss_action1.item())
+        val_epoch_losses['action2'].append(loss_action2.item())
+        val_epoch_losses['state'].append(loss_state.item())
+        val_epoch_losses['total'].append(loss.item())
 
     model.train()
-    return epoch_losses_action1, epoch_losses_action2, epoch_losses_state, epoch_losses
+    return val_epoch_losses
 
 
 model.train()
-losses_action1, losses_action2, losses_state, losses = [], [], [], []
-val_losses_action1, val_losses_action2, val_losses_state, val_losses = [], [], [], []
+train_losses = defaultdict(list)
+val_losses = defaultdict(list)
 completed_steps = 0
 
 for epoch in range(epochs):
-    epoch_losses_action1, epoch_losses_action2, epoch_losses_state, epoch_losses = [], [], [], []
+    epoch_losses = defaultdict(list)
 
     print(f'==== Epoch: {epoch + 1} ====')
     for step, batch in enumerate(train_dataloader, start=0):
@@ -121,10 +123,10 @@ for epoch in range(epochs):
 
         loss = loss_action1 + loss_action2 + loss_state
 
-        epoch_losses_action1.append(loss_action1.item())
-        epoch_losses_action2.append(loss_action2.item())
-        epoch_losses_state.append(loss_state.item())
-        epoch_losses.append(loss.item())
+        epoch_losses['action1'].append(loss_action1.item())
+        epoch_losses['action2'].append(loss_action2.item())
+        epoch_losses['state'].append(loss_state.item())
+        epoch_losses['total'].append(loss.item())
 
         if completed_steps % print_interval == 0:
             accelerator.print(
@@ -144,33 +146,34 @@ for epoch in range(epochs):
         completed_steps += 1
 
     # Epoch complete, print train metrics across entire epoch
-    losses_action1.append(statistics.mean(epoch_losses_action1))
-    losses_action2.append(statistics.mean(epoch_losses_action2))
-    losses_state.append(statistics.mean(epoch_losses_state))
-    losses.append(statistics.mean(epoch_losses))
+    train_losses['action1'].append(statistics.mean(epoch_losses['action1']))
+    train_losses['action2'].append(statistics.mean(epoch_losses['action2']))
+    train_losses['state'].append(statistics.mean(epoch_losses['state']))
+    train_losses['total'].append(statistics.mean(epoch_losses['total']))
     accelerator.print(
         {
             "epoch": epoch + 1,
-            "loss action1": losses_action1[-1],
-            "loss action2": losses_action2[-1],
-            "loss state": losses_state[-1],
-            "loss total": losses[-1],
+            "loss action1": train_losses['action1'][-1],
+            "loss action2": train_losses['action2'][-1],
+            "loss state": train_losses['state'][-1],
+            "loss total": train_losses['total'][-1],
         })
 
     # Epoch complete, print val metrics
-    val_epoch_losses_action1, val_epoch_losses_action2, val_epoch_losses_state, val_epoch_losses = evaluate(val_dataloader)
-    val_losses_action1.append(statistics.mean(val_epoch_losses_action1))
-    val_losses_action2.append(statistics.mean(val_epoch_losses_action2))
-    val_losses_state.append(statistics.mean(val_epoch_losses_state))
-    val_losses.append(statistics.mean(val_epoch_losses))
-
+    val_epoch_losses = evaluate(val_dataloader)
+    val_losses['action1'].append(statistics.mean(val_epoch_losses['action1']))
+    val_losses['action2'].append(statistics.mean(val_epoch_losses['action2']))
+    val_losses['state'].append(statistics.mean(val_epoch_losses['state']))
+    val_losses['total'].append(statistics.mean(val_epoch_losses['total']))
     accelerator.print(
         {
             "epoch": epoch + 1,
-            "val loss action1": val_losses_action1[-1],
-            "val loss action2": val_losses_action2[-1],
-            "val loss state": val_losses_state[-1],
-            "val loss total": val_losses[-1],
+            "val loss action1": val_losses['action1'][-1],
+            "val loss action2": val_losses['action2'][-1],
+            "val loss state": val_losses['state'][-1],
+            "val loss total": val_losses['total'][-1],
         })
 
     accelerator.save_state(f'checkpoints/checkpoint_epoch_{epoch + 1}')
+
+plot_loss(train_losses, val_losses, 'figures')
