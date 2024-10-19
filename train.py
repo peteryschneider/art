@@ -158,7 +158,7 @@ for epoch in range(epochs):
         })
 
     # Epoch complete, print val metrics
-    val_epoch_losses_action1, val_epoch_losses_action2, val_epoch_losses_state, val_epoch_losses = evaluate()
+    val_epoch_losses_action1, val_epoch_losses_action2, val_epoch_losses_state, val_epoch_losses = evaluate(val_dataloader)
     val_losses_action1.append(statistics.mean(val_epoch_losses_action1))
     val_losses_action2.append(statistics.mean(val_epoch_losses_action2))
     val_losses_state.append(statistics.mean(val_epoch_losses_state))
