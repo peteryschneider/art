@@ -1,4 +1,6 @@
 import statistics
+import pickle
+import os
 
 import torch
 from torch.optim import AdamW
@@ -34,6 +36,8 @@ raw_data = load_data(data_dir)
 train_indices, val_indices = train_val_split(raw_data['states'])
 normalized_train_data, norm_stats = normalize_data(raw_data, train_indices, timesteps=timesteps)
 normalized_val_data, _ = normalize_data(raw_data, val_indices, timesteps=timesteps, norm_stats=norm_stats)
+with open(os.path.join(data_dir, 'norm_stats.pkl'), 'wb') as f:
+    pickle.dump(norm_stats, f)
 train_dataloader = create_dataloader(normalized_train_data, batch_size=batch_size, shuffle=True)
 val_dataloader = create_dataloader(normalized_val_data, batch_size=batch_size, shuffle=False)
 
