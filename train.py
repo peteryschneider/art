@@ -59,7 +59,7 @@ def evaluate(val_dataloader):
     val_epoch_losses = defaultdict(list)
 
     for batch in (val_dataloader):
-        states, actions, rtgs, ctgs, attention_mask, timesteps, ix = batch
+        states, actions, rtgs, ctgs, attention_mask, timesteps = batch
         with torch.no_grad():
             state_preds, action_preds = model(
               states=states,
@@ -99,7 +99,7 @@ for epoch in range(epochs):
 
     print(f'==== Epoch: {epoch + 1} ====')
     for step, batch in enumerate(train_dataloader, start=0):
-        states, actions, rtgs, ctgs, attention_mask, timesteps, ix = batch
+        states, actions, rtgs, ctgs, attention_mask, timesteps = batch
         state_preds, action_preds = model(
             states=states,
             actions=actions,

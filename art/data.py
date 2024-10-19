@@ -26,16 +26,11 @@ def train_val_split(tensor, train_ratio=0.8):
 class RpodDataset(Dataset):
     def __init__(self, data):
         self.data = data
-        self.max_len = self.data['states'].shape[1]
-
     def __len__(self):
         return len(self.data['states'])
-
     def __getitem__(self, idx):
-        return self.data['states'][idx, :, :], self.data['actions'][idx, :, :], self.data['rtgs'][idx, :, :], self.data['ctgs'][idx, :, :], self.data['attention_mask'][idx, :], self.data['timesteps'][idx, :], idx
+        return self.data['states'][idx, :, :], self.data['actions'][idx, :, :], self.data['rtgs'][idx, :, :], self.data['ctgs'][idx, :, :], self.data['attention_mask'][idx, :], self.data['timesteps'][idx, :]
 
-    def get_data_size(self):
-        return len(self.data['states'])
 
 def normalize_data(data, indices, timesteps=None, norm_stats=None):
     if timesteps is None:
