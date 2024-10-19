@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import DataLoader
 
-torch.manual_seed(seed)
+torch.manual_seed(42)
 
 def load_data(data_dir):
     raw_data = {'states': torch.load(os.path.join(data_dir, 'torch_states.pth')),
