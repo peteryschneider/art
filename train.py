@@ -7,11 +7,10 @@ from accelerate import Accelerator
 from art.data import load_data, train_val_split, normalize_data, create_dataloader
 from art.models import create_model
 
+# Set these parameters
 data_dir = 'data'
 batch_size = 10
-timesteps = 40 # Set to None to do entire timesteps history
-
-#model
+timesteps = 40  # Set to None to do entire history
 epochs = 10
 lr = 1e-5
 print_interval = 500
@@ -28,7 +27,9 @@ model_params = {
     'embd_pdrop': 0.1,
     'attn_pdrop': 0.1,
 }
+seed = 42
 
+torch.manual_seed(seed)
 raw_data = load_data(data_dir)
 train_indices, val_indices = train_val_split(raw_data['states'])
 normalized_train_data, norm_stats = normalize_data(raw_data, train_indices, timesteps=timesteps)
@@ -36,20 +37,15 @@ normalized_val_data, _ = normalize_data(raw_data, val_indices, timesteps=timeste
 train_dataloader = create_dataloader(normalized_train_data, batch_size=batch_size, shuffle=True)
 val_dataloader = create_dataloader(normalized_val_data, batch_size=batch_size, shuffle=False)
 
-
 model = create_model(n_state=normalized_train_data['states'].shape[-1],
                      n_action=normalized_train_data['actions'].shape[-1],
                      max_ep_len=raw_data['timesteps'].shape[-1],
                      **model_params,
                      )
-
-
 optimizer = AdamW(model.parameters(), lr=lr)
 accelerator = Accelerator(mixed_precision='no', gradient_accumulation_steps=8)
 model, optimizer, train_dataloader, val_dataloader = accelerator.prepare(
     model, optimizer, train_dataloader, val_dataloader)
-
-
 
 @torch.no_grad()
 def evaluate(val_dataloader):
@@ -89,8 +85,6 @@ def evaluate(val_dataloader):
 
     model.train()
     return epoch_losses_action1, epoch_losses_action2, epoch_losses_state, epoch_losses
-    #return statistics.mean(epoch_losses_action1), statistics.mean(epoch_losses_action2), statistics.mean(epoch_losses_state), statistics.mean(epoch_losses)
-
 
 
 model.train()
