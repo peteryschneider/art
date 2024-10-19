@@ -7,7 +7,7 @@ from accelerate import Accelerator
 from art.data import load_data, train_val_split, normalize_data, create_dataloader
 from art.models import create_model
 
-data_dir = '../data'
+data_dir = 'data'
 batch_size = 10
 timesteps = 40 # Set to None to do entire timesteps history
 
@@ -179,4 +179,4 @@ for epoch in range(epochs):
             "loss total": val_losses[-1],
         })
 
-    accelerator.save_state(f'../checkpoints/checkpoint_epoch_{epoch + 1}')
+    accelerator.save_state(f'checkpoints/checkpoint_epoch_{epoch + 1}')
