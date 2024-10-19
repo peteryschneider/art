@@ -76,7 +76,8 @@ def evaluate(val_dataloader):
 
         # Mask for states
         expanded_mask = attention_mask.unsqueeze(-1).expand_as(state_preds)
-        loss_state = torch.nn.functional.mse_loss(expanded_mask[:,1:,:] * state_preds[:,:-1,:], expanded_mask[:,1:,:] * states[:,1:,:], reduction='mean')
+        loss_state = torch.nn.functional.mse_loss(expanded_mask[:, :-1, :] * state_preds[:, :-1, :],
+                                                  expanded_mask[:, :-1, :] * states[:, 1:, :], reduction='mean')
 
         loss = loss_action1 + loss_action2 + loss_state
 
